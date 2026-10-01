@@ -29,7 +29,11 @@ more every time you buy it.
 | SKIBIDI   |      20,000 |             500 |
 | OHIO      |     150,000 |           3,000 |
 
-Progress is not saved when you quit.
+## Saving
+
+Progress saves every second, and again when you quit, into a calculator
+list named `AURA`. Next time you run the game it picks up where you left off.
+To start over, delete the `AURA` list in the calculator's memory manager.
 
 ## TI-84 Evo notes
 
@@ -41,3 +45,8 @@ These behaviors were confirmed on real hardware by the
 - `draw_text` draws 18 px higher than shapes at the same y.
 - There is no double buffering (`use_buffer()` is unsupported), so the game
   redraws only the parts of the screen that change.
+
+Python can't write files on the Evo, so the save uses
+`ti_system.store_list` / `recall_list`. Published
+[Evo Python sandbox research](https://www.cemetech.net/forum/viewtopic.php?p=317962)
+found list names can be up to 5 letters, hold numbers only, and at most 100 items.

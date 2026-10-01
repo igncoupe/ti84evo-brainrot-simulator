@@ -1,5 +1,6 @@
 # Brainrot Idle for the TI-84 Evo.
 # UP/DOWN pick a row, ENTER farms aura or buys, CLEAR twice quits.
+# Progress is saved every second in the calculator list AURA.
 
 import ti_draw
 import ti_system
@@ -24,10 +25,25 @@ ROW_TOP = 44
 ROW_H = 23
 ROWS = 7
 
-aura = 0
+# The save is the list [aura, owned upgrade 1, ..., owned upgrade 6].
+# List names can be at most 5 letters.
+SAVE = "AURA"
+
+# On the first run there is no AURA list yet, so recall_list fails.
+try:
+    save = ti_system.recall_list(SAVE)
+except Exception:
+    save = [0, 0, 0, 0, 0, 0, 0]
+aura = int(save[0])
+owned = [int(n) for n in save[1:7]]
+
+# Rate and costs follow from what you own.
 rate = 0
-owned = [0, 0, 0, 0, 0, 0]
 costs = [15, 100, 600, 3000, 20000, 150000]
+for i in range(6):
+    rate += RATES[i] * owned[i]
+    for _ in range(owned[i]):
+        costs[i] = costs[i] * 115 // 100
 sel = 0
 
 
@@ -53,6 +69,10 @@ def fmt(n):
 
 def read_key():
     return int(ti_system.get_key(0))
+
+
+def save_game():
+    ti_system.store_list(SAVE, [aura] + owned)
 
 
 def draw_header():
@@ -89,7 +109,7 @@ def draw_row(r):
 
 ti_draw.clear()
 draw_header()
-draw_msg("ENTER TO FARM AURA")
+draw_msg("WELCOME BACK" if aura or rate else "ENTER TO FARM AURA")
 ti_draw.set_color(0, 0, 0)
 ti_draw.draw_line(0, 42, 319, 42)
 for r in range(ROWS):
@@ -103,6 +123,7 @@ while True:
         next_tick += 1
         aura += rate
         draw_header()
+        save_game()
 
     # get_key(0) reports the key held right now, so act only on a new press.
     k = read_key()
@@ -139,4 +160,5 @@ while True:
                     draw_msg(random.choice(HYPE))
     prev = k
 
+save_game()
 ti_draw.clear()
