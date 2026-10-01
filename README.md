@@ -14,11 +14,11 @@ buy upgrades, and watch your aura climb.
 | Key        | Action                                                  |
 |------------|---------------------------------------------------------|
 | UP / DOWN  | Pick a row (the list scrolls)                           |
-| ENTER      | Farm aura on the top row, or buy the selected upgrade   |
-| Hold ENTER | Farm 5 times per second on the top row                  |
+| ENTER      | Turn auto farm on/off (top row), or buy the selected upgrade |
 | CLEAR      | Press twice to quit                                     |
 
-Farming gives `1 + (aura per second / 10)` each time. Each upgrade costs 15%
+Auto farm farms 5 times per second while it is on, and each farm gives
+`1 + (aura per second / 3)`. Each upgrade costs 15%
 more every time you buy it.
 
 | Upgrade              |      Start cost | Aura per second |
@@ -51,11 +51,14 @@ added at the end of the list, so older, shorter saves still load.
 These behaviors were confirmed on real hardware by the
 [ti84evoChess](https://github.com/gcmvanloon/ti84evoChess) project:
 
-- `ti_system.get_key(0)` returns the key held right now. Codes used here:
-  UP 25, DOWN 34, CLEAR 45, ENTER 105.
+- `ti_system.get_key(0)` key codes used here: UP 25, DOWN 34, CLEAR 45,
+  ENTER 105.
 - `draw_text` draws 18 px higher than shapes at the same y.
 - There is no double buffering (`use_buffer()` is unsupported), so the game
   redraws only the parts of the screen that change.
+
+On a real TI-84 Evo, holding ENTER farmed only once: `get_key(0)` reports a
+key once per press, not while it is held. That is why farming is a toggle.
 
 Python can't write files on the Evo, so the save uses
 `ti_system.store_list` / `recall_list`. Published

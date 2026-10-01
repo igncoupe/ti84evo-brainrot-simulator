@@ -1,6 +1,6 @@
 # Brainrot Idle for the TI-84 Evo.
-# UP/DOWN pick a row, ENTER farms aura or buys, CLEAR twice quits.
-# Hold ENTER on FARM AURA to farm 5 times per second.
+# UP/DOWN pick a row, ENTER toggles auto farm or buys, CLEAR twice quits.
+# Auto farm farms 5 times per second while it is on.
 # Progress is saved every second in the calculator list AURA.
 
 import ti_draw
@@ -56,15 +56,17 @@ PINK = (255, 60, 200)
 GREEN = (80, 255, 140)
 RED = (255, 90, 90)
 
-# Row 0 farms aura, the rest buy upgrades. 7 rows fit, so the list scrolls.
+# Row 0 toggles auto farm, the rest buy upgrades. 7 rows fit, so the list scrolls.
 # Rows end at x=315; the scrollbar uses x=316-319.
 ROW_TOP = 44
 ROW_H = 23
 VISIBLE = 7
 ROWS = len(NAMES) + 1
 
-# Holding ENTER on FARM AURA farms once per FARM_EVERY seconds.
+# get_key(0) reports a key once per press, even while it is held, so a
+# held ENTER can't farm. Auto farm farms once per FARM_EVERY seconds instead.
 FARM_EVERY = 0.2
+HINT = "ENTER: AUTO FARM"
 
 # The save is the list [aura, owned of upgrade 1, owned of upgrade 2, ...].
 # List names can be at most 5 letters.
@@ -90,6 +92,7 @@ for i in range(len(NAMES)):
         costs[i] = costs[i] * 115 // 100
 sel = 0
 top = 0
+autofarm = False
 
 
 def text(x, y, s):
@@ -114,6 +117,11 @@ def fmt(n):
 
 def read_key():
     return int(ti_system.get_key(0))
+
+
+def farm_power():
+    # Aura from one farm. Grows with your rate so farming stays useful.
+    return 1 + rate // 3
 
 
 def save_game():
@@ -151,8 +159,8 @@ def draw_row(r):
         box(ROW_BG[r % 2], 0, y, 316, ROW_H)
     if r == 0:
         color(DARK if r == sel else GOLD)
-        text(8, y + 4, "FARM AURA")
-        text_right(312, y + 4, "+" + fmt(1 + rate // 10))
+        text(8, y + 4, "AUTO FARM ON" if autofarm else "AUTO FARM OFF")
+        text_right(312, y + 4, "+" + fmt(farm_power()))
     else:
         box(TABS[r - 1], 0, y, 4, ROW_H)
         color(DARK if r == sel else WHITE)
@@ -172,7 +180,7 @@ def draw_rows():
 
 box(BG, 0, 0, 320, 210)
 draw_header()
-draw_msg("WELCOME BACK" if aura or rate else "HOLD ENTER TO FARM", CYAN)
+draw_msg("WELCOME BACK" if aura or rate else HINT, CYAN)
 color(PINK)
 ti_draw.draw_line(0, 42, 319, 42)
 draw_rows()
@@ -188,8 +196,11 @@ while True:
         draw_header()
         save_game()
 
-    # get_key(0) reports the key held right now, so a new press is a key
-    # that differs from the last read.
+    if autofarm and time.monotonic() >= next_farm:
+        next_farm += FARM_EVERY
+        aura += farm_power()
+        draw_header()
+
     k = read_key()
     new = k != 0 and k != prev
     prev = k
@@ -201,14 +212,9 @@ while True:
         draw_msg("CLEAR AGAIN TO QUIT", RED)
     elif new and quitting:
         quitting = False
-        draw_msg("HOLD ENTER TO FARM", CYAN)
+        draw_msg(HINT, CYAN)
 
-    if k == KEY_ENTER and sel == 0:
-        if new or time.monotonic() >= next_farm:
-            next_farm = time.monotonic() + FARM_EVERY
-            aura += 1 + rate // 10
-            draw_header()
-    elif new and (k == KEY_UP or k == KEY_DOWN):
+    if new and (k == KEY_UP or k == KEY_DOWN):
         old = sel
         old_top = top
         sel = (sel + (1 if k == KEY_DOWN else -1)) % ROWS
@@ -221,6 +227,10 @@ while True:
             draw_row(sel)
         else:
             draw_rows()
+    elif new and k == KEY_ENTER and sel == 0:
+        autofarm = not autofarm
+        next_farm = time.monotonic()
+        draw_row(0)
     elif new and k == KEY_ENTER:
         i = sel - 1
         if aura < costs[i]:
